@@ -103,6 +103,7 @@ const exchanges = {
     'coss':                    require ('./js/coss.js'),
     'crex24':                  require ('./js/crex24.js'),
     'crypton':                 require ('./js/crypton.js'),
+    'currencycom':             require ('./js/currencycom.js'),
     'deribit':                 require ('./js/deribit.js'),
     'digifinex':               require ('./js/digifinex.js'),
     'dsx':                     require ('./js/dsx.js'),
