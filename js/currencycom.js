@@ -847,8 +847,8 @@ module.exports = class currencycom extends Exchange {
         const market = this.market (symbol);
         const request = {
             'symbol': market['id'],
-            'orderId': parseInt (id),
-            // 'origClientOrderId': id,
+            //'orderId': parseInt (id),
+             'origClientOrderId': id,
         };
         const response = await this.privateDeleteOrder (this.extend (request, params));
         return this.parseOrder (response);
