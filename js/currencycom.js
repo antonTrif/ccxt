@@ -770,7 +770,7 @@ module.exports = class currencycom extends Exchange {
         if (origClientOrderId !== undefined) {
             request['origClientOrderId'] = origClientOrderId;
         } else {
-            request['orderId'] = parseInt (id);
+            request['orderId'] = id;
         }
         const response = await this.privateGetOrder (this.extend (request, params));
         return this.parseOrder (response, market);
@@ -847,7 +847,7 @@ module.exports = class currencycom extends Exchange {
         const market = this.market (symbol);
         const request = {
             'symbol': market['id'],
-            'orderId': parseInt (id),
+            'orderId': id,
             // 'origClientOrderId': id,
         };
         const response = await this.privateDeleteOrder (this.extend (request, params));
