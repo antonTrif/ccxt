@@ -55,9 +55,9 @@ module.exports = class currencycom extends Exchange {
                 'logo': 'https://currency.com/img/platforms/logo-currency.png',
                 'api': {
                     'web': 'https://www.currency.com',
-                    'public': 'https://api-adapter.backend.currency.com/api/v1',
-                    'private': 'https://api-adapter.backend.currency.com/api/v1',
-                    'v1': 'https://api-adapter.backend.currency.com/api/v1',
+                    'public': 'http://public-api-adapter.public-api-adapter.test-ld4.backend-capital.com:8086/api/v1',
+                    'private': 'http://public-api-adapter.public-api-adapter.test-ld4.backend-capital.com:8086/api/v1',
+                    'v1': 'http://public-api-adapter.public-api-adapter.test-ld4.backend-capital.com:8086/api/v1',
                 },
                 'www': 'https://www.currency.com',
                 'referral': 'https://www.currency.com/?ref=10205187',
