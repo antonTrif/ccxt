@@ -135,11 +135,6 @@ function try_all_proxies($exchange, $proxies) {
     $current_proxy = 0;
     $max_retries = count($proxies);
 
-    // a special case for ccex
-    if ($exchange->id == 'ccex') {
-        $currentProxy = 1;
-    }
-
     for ($i = 0; $i < $max_retries; $i++) {
         try {
             $exchange->proxy = $proxies[$current_proxy];
@@ -189,7 +184,7 @@ function test_exchange($exchange) {
     );
 
     foreach ($symbols as $s) {
-        if (in_array($s, $exchange->symbols)) {
+        if (in_array ($s, $exchange->symbols) && (array_key_exists ('active', $exchange->markets[$s]) ? $exchange->markets[$s]['active'] : true)) {
             $symbol = $s;
             break;
         }

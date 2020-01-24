@@ -7,16 +7,19 @@ from ccxt.async_support.hitbtc import hitbtc
 import base64
 import math
 from ccxt.base.errors import ExchangeError
+from ccxt.base.errors import AuthenticationError
 from ccxt.base.errors import PermissionDenied
+from ccxt.base.errors import BadSymbol
 from ccxt.base.errors import InsufficientFunds
 from ccxt.base.errors import InvalidOrder
 from ccxt.base.errors import OrderNotFound
 from ccxt.base.errors import ExchangeNotAvailable
+from ccxt.base.errors import RequestTimeout
 from ccxt.base.decimal_to_precision import TRUNCATE
 from ccxt.base.decimal_to_precision import DECIMAL_PLACES
 
 
-class hitbtc2 (hitbtc):
+class hitbtc2(hitbtc):
 
     def describe(self):
         return self.deep_extend(super(hitbtc2, self).describe(), {
@@ -553,8 +556,11 @@ class hitbtc2 (hitbtc):
                 'defaultTimeInForce': 'FOK',
             },
             'exceptions': {
+                '504': RequestTimeout,  # {"error":{"code":504,"message":"Gateway Timeout"}}
+                '1002': AuthenticationError,  # {"error":{"code":1002,"message":"Authorization failed","description":""}}
                 '1003': PermissionDenied,  # "Action is forbidden for self API key"
                 '2010': InvalidOrder,  # "Quantity not a valid number"
+                '2001': BadSymbol,  # "Symbol not found"
                 '2011': InvalidOrder,  # "Quantity too low"
                 '2020': InvalidOrder,  # "Price not a valid number"
                 '20002': OrderNotFound,  # canceling non-existent order
@@ -634,7 +640,7 @@ class hitbtc2 (hitbtc):
                 if currency['disabled']:
                     active = False
             type = 'fiat'
-            if ('crypto' in list(currency.keys())) and currency['crypto']:
+            if ('crypto' in currency) and currency['crypto']:
                 type = 'crypto'
             name = self.safe_string(currency, 'fullName')
             result[code] = {
@@ -882,7 +888,7 @@ class hitbtc2 (hitbtc):
         if since is not None:
             request['startTime'] = since
         response = await self.privateGetAccountTransactions(self.extend(request, params))
-        return self.parseTransactions(response, currency, since, limit)
+        return self.parse_transactions(response, currency, since, limit)
 
     def parse_transaction(self, transaction, currency=None):
         #
@@ -1147,9 +1153,12 @@ class hitbtc2 (hitbtc):
                 if feeCost is None:
                     feeCost = 0
                 tradesCost = self.sum(tradesCost, trades[i]['cost'])
-                feeCost = self.sum(feeCost, trades[i]['fee']['cost'])
+                tradeFee = self.safe_value(trades[i], 'fee', {})
+                tradeFeeCost = self.safe_float(tradeFee, 'cost')
+                if tradeFeeCost is not None:
+                    feeCost = self.sum(feeCost, tradeFeeCost)
             cost = tradesCost
-            if (filled is not None) and(filled > 0):
+            if (filled is not None) and (filled > 0):
                 average = cost / filled
                 if type == 'market':
                     if price is None:
@@ -1383,13 +1392,15 @@ class hitbtc2 (hitbtc):
             # {"code":504,"message":"Gateway Timeout","description":""}
             if (code == 503) or (code == 504):
                 raise ExchangeNotAvailable(feedback)
+            # fallback to default error handler on rate limit errors
+            # {"code":429,"message":"Too many requests","description":"Too many requests"}
+            if code == 429:
+                return
             # {"error":{"code":20002,"message":"Order not found","description":""}}
             if body[0] == '{':
                 if 'error' in response:
-                    code = self.safe_string(response['error'], 'code')
-                    exceptions = self.exceptions
-                    if code in exceptions:
-                        raise exceptions[code](feedback)
+                    errorCode = self.safe_string(response['error'], 'code')
+                    self.throw_exactly_matched_exception(self.exceptions, errorCode, feedback)
                     message = self.safe_string(response['error'], 'message')
                     if message == 'Duplicate clientOrderId':
                         raise InvalidOrder(feedback)
