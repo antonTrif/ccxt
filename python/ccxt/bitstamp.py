@@ -23,7 +23,7 @@ from ccxt.base.errors import NotSupported
 from ccxt.base.errors import InvalidNonce
 
 
-class bitstamp (Exchange):
+class bitstamp(Exchange):
 
     def describe(self):
         return self.deep_extend(super(bitstamp, self).describe(), {
@@ -36,7 +36,7 @@ class bitstamp (Exchange):
             'has': {
                 'CORS': True,
                 'fetchDepositAddress': True,
-                'fetchOrder': 'emulated',
+                'fetchOrder': True,
                 'fetchOpenOrders': True,
                 'fetchMyTrades': True,
                 'fetchTransactions': True,
@@ -45,7 +45,10 @@ class bitstamp (Exchange):
             },
             'urls': {
                 'logo': 'https://user-images.githubusercontent.com/1294454/27786377-8c8ab57e-5fe9-11e7-8ea4-2b05b6bcceec.jpg',
-                'api': 'https://www.bitstamp.net/api',
+                'api': {
+                    'public': 'https://www.bitstamp.net/api',
+                    'private': 'https://www.bitstamp.net/api',
+                },
                 'www': 'https://www.bitstamp.net',
                 'doc': 'https://www.bitstamp.net/api',
             },
@@ -112,13 +115,14 @@ class bitstamp (Exchange):
                 'trading': {
                     'tierBased': True,
                     'percentage': True,
-                    'taker': 0.25 / 100,
-                    'maker': 0.25 / 100,
+                    'taker': 0.5 / 100,
+                    'maker': 0.5 / 100,
                     'tiers': {
                         'taker': [
-                            [0, 0.25 / 100],
-                            [20000, 0.24 / 100],
-                            [100000, 0.22 / 100],
+                            [0, 0.5 / 100],
+                            [20000, 0.25 / 100],
+                            [100000, 0.24 / 100],
+                            [200000, 0.22 / 100],
                             [400000, 0.20 / 100],
                             [600000, 0.15 / 100],
                             [1000000, 0.14 / 100],
@@ -128,9 +132,10 @@ class bitstamp (Exchange):
                             [20000001, 0.10 / 100],
                         ],
                         'maker': [
-                            [0, 0.25 / 100],
-                            [20000, 0.24 / 100],
-                            [100000, 0.22 / 100],
+                            [0, 0.5 / 100],
+                            [20000, 0.25 / 100],
+                            [100000, 0.24 / 100],
+                            [200000, 0.22 / 100],
                             [400000, 0.20 / 100],
                             [600000, 0.15 / 100],
                             [1000000, 0.14 / 100],
@@ -242,7 +247,7 @@ class bitstamp (Exchange):
             'pair': self.market_id(symbol),
         }
         response = self.publicGetOrderBookPair(self.extend(request, params))
-        timestamp = self.safe_integer_product(response, 'timestamp', 1000)
+        timestamp = self.safe_timestamp(response, 'timestamp')
         return self.parse_order_book(response, timestamp)
 
     def fetch_ticker(self, symbol, params={}):
@@ -251,7 +256,7 @@ class bitstamp (Exchange):
             'pair': self.market_id(symbol),
         }
         ticker = self.publicGetTickerPair(self.extend(request, params))
-        timestamp = self.safe_integer_product(ticker, 'timestamp', 1000)
+        timestamp = self.safe_timestamp(ticker, 'timestamp')
         vwap = self.safe_float(ticker, 'vwap')
         baseVolume = self.safe_float(ticker, 'volume')
         quoteVolume = None
@@ -311,7 +316,7 @@ class bitstamp (Exchange):
             id = ids[i]
             if id.find('_') < 0:
                 value = self.safe_float(transaction, id)
-                if (value is not None) and(value != 0):
+                if (value is not None) and (value != 0):
                     return id
         return None
 
@@ -619,7 +624,7 @@ class bitstamp (Exchange):
         if code is not None:
             currency = self.currency(code)
         transactions = self.filter_by_array(response, 'type', ['0', '1'], False)
-        return self.parseTransactions(transactions, currency, since, limit)
+        return self.parse_transactions(transactions, currency, since, limit)
 
     def fetch_withdrawals(self, code=None, since=None, limit=None, params={}):
         self.load_markets()
@@ -651,7 +656,7 @@ class bitstamp (Exchange):
         #         },
         #     ]
         #
-        return self.parseTransactions(response, None, since, limit)
+        return self.parse_transactions(response, None, since, limit)
 
     def parse_transaction(self, transaction, currency=None):
         #
@@ -705,7 +710,7 @@ class bitstamp (Exchange):
         elif currency is not None:
             amount = self.safe_float(transaction, currency['id'], amount)
             feeCurrency = currency['code']
-        elif (code is not None) and(currencyId is not None):
+        elif (code is not None) and (currencyId is not None):
             amount = self.safe_float(transaction, currencyId, amount)
             feeCurrency = code
         if amount is not None:
@@ -822,10 +827,9 @@ class bitstamp (Exchange):
         timestamp = self.parse8601(self.safe_string(order, 'datetime'))
         lastTradeTimestamp = None
         symbol = None
-        marketId = self.safe_string(order, 'currency_pair')
+        marketId = self.safe_string_lower(order, 'currency_pair')
         if marketId is not None:
             marketId = marketId.replace('/', '')
-            marketId = marketId.lower()
             if marketId in self.markets_by_id:
                 market = self.markets_by_id[marketId]
                 symbol = market['symbol']
@@ -851,7 +855,7 @@ class bitstamp (Exchange):
                 trades.append(trade)
             lastTradeTimestamp = trades[numTransactions - 1]['timestamp']
         status = self.parse_order_status(self.safe_string(order, 'status'))
-        if (status == 'closed') and(amount is None):
+        if (status == 'closed') and (amount is None):
             amount = filled
         remaining = None
         if amount is not None:
@@ -981,7 +985,7 @@ class bitstamp (Exchange):
         return self.milliseconds()
 
     def sign(self, path, api='public', method='GET', params={}, headers=None, body=None):
-        url = self.urls['api'] + '/'
+        url = self.urls['api'][api] + '/'
         if api != 'v1':
             url += self.version + '/'
         url += self.implode_params(path, params)
@@ -1037,14 +1041,9 @@ class bitstamp (Exchange):
             code = self.safe_string(response, 'code')
             if code == 'API0005':
                 raise AuthenticationError(self.id + ' invalid signature, use the uid for the main account if you have subaccounts')
-            exact = self.exceptions['exact']
-            broad = self.exceptions['broad']
             feedback = self.id + ' ' + body
             for i in range(0, len(errors)):
                 value = errors[i]
-                if value in exact:
-                    raise exact[value](feedback)
-                broadKey = self.findBroadlyMatchedKey(broad, value)
-                if broadKey is not None:
-                    raise broad[broadKey](feedback)
+                self.throw_exactly_matched_exception(self.exceptions['exact'], value, feedback)
+                self.throw_broadly_matched_exception(self.exceptions['broad'], value, feedback)
             raise ExchangeError(feedback)

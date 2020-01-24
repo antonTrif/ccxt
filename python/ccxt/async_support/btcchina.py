@@ -8,7 +8,7 @@ import base64
 import hashlib
 
 
-class btcchina (Exchange):
+class btcchina(Exchange):
 
     def describe(self):
         return self.deep_extend(super(btcchina, self).describe(), {
@@ -265,7 +265,7 @@ class btcchina (Exchange):
         request = self.create_market_request(market)
         if market['plus']:
             now = self.milliseconds()
-            request['start_time'] = now - 86400 * 1000
+            request['start_time'] = now - 86400000
             request['end_time'] = now
         else:
             method += 's'  # trades vs trade
