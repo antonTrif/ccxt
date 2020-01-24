@@ -127,10 +127,14 @@ module.exports = class currencycom extends Exchange {
                         'allOrders',
                         'account',
                         'myTrades',
+                        'tradingPositions',
+                        'leverageSettings',
                     ],
                     'post': [
                         'order',
                         'order/test',
+                        'closeTradingPositions',
+                        'updateTradingPosition',
                     ],
                     'delete': [
                         'order',
