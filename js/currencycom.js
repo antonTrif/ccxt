@@ -135,6 +135,7 @@ module.exports = class currencycom extends Exchange {
                         'order/test',
                         'closeTradingPosition',
                         'updateTradingPosition',
+                        'updateTradingOrder',
                     ],
                     'delete': [
                         'order',
