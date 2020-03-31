@@ -218,10 +218,10 @@ module.exports = class currencycom extends Exchange {
                 continue;
             }
             const baseId = market['baseAsset'];
-            const quoteId = market['quoteAsset'];
+            const quoteId = market['quoteAssetId'];
             const base = this.safeCurrencyCode (baseId);
-            const quote = this.safeCurrencyCode (quoteId);
-            const symbol = base + '/' + quote;
+            const quote = this.safeCurrencyCode (market['quoteAsset']);
+            const symbol = baseId + '/' + quoteId;
             const filters = this.indexBy (market['filters'], 'filterType');
             const precision = {
                 'base': market['baseAssetPrecision'],
