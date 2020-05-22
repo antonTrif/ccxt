@@ -55,9 +55,9 @@ module.exports = class currencycom extends Exchange {
                 'logo': 'https://currency.com/img/platforms/logo-currency.png',
                 'api': {
                     'web': 'https://www.currency.com',
-                    'public': 'https://api-adapter.backend.currency.com/api/v1',
-                    'private': 'https://api-adapter.backend.currency.com/api/v1',
-                    'v1': 'https://api-adapter.backend.currency.com/api/v1',
+                    'public': 'https://test-public-api.backend.currency.com/api/v1',
+                    'private': 'https://test-public-api.backend.currency.com/api/v1',
+                    'v1': 'https://test-public-api.backend.currency.com/api/v1',
                 },
                 'www': 'https://www.currency.com',
                 'referral': 'https://www.currency.com/?ref=10205187',
@@ -169,6 +169,7 @@ module.exports = class currencycom extends Exchange {
                 'newOrderRespType': {
                     'market': 'FULL', // 'ACK' for order id, 'RESULT' for full order or 'FULL' for order with fills
                     'limit': 'RESULT', // we change it from 'ACK' by default to 'RESULT'
+                    'stop': 'RESULT',
                 },
             },
             'exceptions': {
@@ -753,7 +754,9 @@ module.exports = class currencycom extends Exchange {
             timeInForceIsRequired = true;
         } else if (uppercaseType === 'LIMIT_MAKER') {
             priceIsRequired = true;
-        }
+        } else if (uppercaseType === 'STOP') {
+            priceIsRequired = true;
+        };
         if (priceIsRequired) {
             if (price === undefined) {
                 throw new InvalidOrder (this.id + ' createOrder method requires a price argument for a ' + type + ' order');
